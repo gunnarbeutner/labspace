@@ -1,0 +1,24 @@
+LabSpace
+========
+
+This is an implementation of the 'Mafia' game (http://en.wikipedia.org/wiki/Mafia_(party_game)) for sbnc.
+
+In order to use it you will need to load the script in your sbnc.tcl config file:
+
+	setctx "<yourbot>"
+	source scripts/labspace.tcl
+
+The script can be used in any of the channels your bot is in (even simultaneously). It supports the following channel commands:
+
+!add - joins the lobby
+!remove - leaves the lobby
+
+Leaving channels will also automatically remove you from any running games.
+
+Once there are enough players in the lobby the game will automatically start (with a short delay to allow more players to join).
+
+At the start of the game the bot randomly assigns a role to each player. The following roles are available:
+
+scientist: The mad scientists' goal is to eliminate all the other players.
+investigator: The investigator has a chance to reveal another player's role (once per round).
+citizen: No special abilities. Everyone gets to vote on who to lynch at the end of the round though.
