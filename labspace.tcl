@@ -84,12 +84,12 @@ proc ls_format_role {role} {
 }
 
 proc ls_format_player {chan player {reveal 0}} {
-	set player "[string range $player 0 0]\002\002[string range $player 1 end]"
+	set no_highlight_player "[string range $player 0 0]\002\002[string range $player 1 end]"
 
 	if {$reveal} {
-		return "\002$player\002 ([ls_format_role [ls_get_role $chan $player]])"
+		return "\002$no_highlight_player\002 ([ls_format_role [ls_get_role $chan $player]])"
 	} else {
-		return "\002$player\002"
+		return "\002$no_highlight_player\002"
 	}
 }
 
