@@ -25,8 +25,8 @@
 # [ ] highscores
 # [x] show role counts
 # [x] warn players about /msg
-# [ ] different weapons
-# [ ] secret voting
+# [-] different weapons
+# [-] secret voting
 # [x] vote breaks when candidate leaves before vote is finished
 # [ ] close lobby if there aren't enough players (rather than spamming for hours)
 # [x] !add / !remove
@@ -68,7 +68,15 @@ proc ls_clear_state {} {
 }
 
 proc ls_debug {chan message} {
-	#putmsg $chan "DEBUG: $message"
+	#ls_putmsg $chan "DEBUG: $message"
+}
+
+proc ls_putnotc {target text} {
+	putquick "NOTICE $target :$text"
+}
+
+proc ls_putmsg {target text} {
+	putquick "PRIVMSG $target :$text"
 }
 
 proc ls_format_role {role} {
@@ -218,7 +226,7 @@ proc ls_pub_cmd_labspace {nick host hand chan arg} {
 
 proc ls_pub_cmd_add {nick host hand chan arg} {
 	if {[onchan match $chan]} {
-		putnotc $nick "Sorry, 'match' is on this channel. You will need to use the alternative set of lobby commands instead (!labspace / !nolabspace)."
+		ls_putnotc $nick "Sorry, 'match' is on this channel. You will need to use the alternative set of lobby commands instead (!labspace / !nolabspace)."
 		return
 	}
 
@@ -236,7 +244,7 @@ proc ls_pub_cmd_nolabspace {nick host hand chan arg} {
 
 proc ls_pub_cmd_remove {nick host hand chan arg} {
 	if {[onchan match $chan]} {
-		putnotc $nick "Sorry, 'match' is on this channel. You will need to use the alternative set of lobby commands instead (!labspace / !nolabspace)."
+		ls_putnotc $nick "Sorry, 'match' is on this channel. You will need to use the alternative set of lobby commands instead (!labspace / !nolabspace)."
 		return
 	}
 
@@ -248,37 +256,37 @@ proc ls_cmd_kill {nick victim} {
 	set victim [string trim $victim]
 
 	if {$chan == ""} {
-		putnotc $nick "You haven't joined any game lobby."
+		ls_putnotc $nick "You haven't joined any game lobby."
 		return
 	}
 
 	if {[ls_get_role $chan $nick] != "scientist"} {
-		putnotc $nick "You need to be a scientist to use this command."
+		ls_putnotc $nick "You need to be a scientist to use this command."
 		return
 	}
 
 	if {[ls_get_gamestate $chan] != "kill"} {
-		putnotc $nick "Sorry, you can't use this command right now."
+		ls_putnotc $nick "Sorry, you can't use this command right now."
 		return
 	}
 
 	if {[ls_get_killer $chan $nick] != 1} {
-		putnotc $nick "Sorry, it's not your turn."
+		ls_putnotc $nick "Sorry, it's not your turn."
 		return
 	}
 
 	if {[ls_get_role $chan $victim] == ""} {
-		putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
+		ls_putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
 		return
 	}
 
 	if {[string equal -nocase $victim $nick]} {
-		putmsg $chan "[ls_format_player $chan $victim 1] committed suicide."
+		ls_putmsg $chan "[ls_format_player $chan $victim 1] committed suicide."
 	} else {
 		if {[ls_get_role $chan $victim] == "scientist"} {
-			putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered. Oops."
+			ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered. Oops."
 		} else {
-			putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
+			ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
 		}
 	}
 
@@ -289,7 +297,7 @@ proc ls_cmd_kill {nick victim} {
 }
 
 proc ls_msg_cmd_kill {nick host hand text} {
-	putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
 	ls_cmd_kill $nick $text
 }
 
@@ -302,22 +310,22 @@ proc ls_cmd_investigate {nick victim} {
 	set victim [string trim $victim]
 
 	if {$chan == ""} {
-		putnotc $nick "You haven't joined any game lobby."
+		ls_putnotc $nick "You haven't joined any game lobby."
 		return
 	}
 
 	if {[ls_get_role $chan $nick] != "investigator"} {
-		putnotc $nick "You need to be an investigator to use this command."
+		ls_putnotc $nick "You need to be an investigator to use this command."
 		return
 	}
 
 	if {[ls_get_gamestate $chan] != "investigate"} {
-		putnotc $nick "Sorry, you can't use this command right now."
+		ls_putnotc $nick "Sorry, you can't use this command right now."
 		return
 	}
 
 	if {[ls_get_role $chan $victim] == ""} {
-		putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
+		ls_putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
 		return
 	}
 
@@ -325,21 +333,21 @@ proc ls_cmd_investigate {nick victim} {
 
 	foreach investigator $investigators {
 		if {![string equal -nocase $nick $investigator]} {
-			putnotc $investigator "Another investigator picked a target."
+			ls_putnotc $investigator "Another investigator picked a target."
 		}
 	}
 
 	if {[string equal -nocase $nick $victim]} {
-		putnotc $nick "You're the investigator. Excellent detective work!"
+		ls_putnotc $nick "You're the investigator. Excellent detective work!"
 	} else {
-		putnotc $nick "[ls_format_player $chan $victim]'s role is: [ls_format_role [ls_get_role $chan $victim]]"
+		ls_putnotc $nick "[ls_format_player $chan $victim]'s role is: [ls_format_role [ls_get_role $chan $victim]]"
 	}
 	ls_set_gamestate $chan vote
 	ls_advance_state $chan
 }
 
 proc ls_msg_cmd_investigate {nick host hand text} {
-	putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
 	ls_cmd_investigate $nick $text
 }
 
@@ -352,33 +360,33 @@ proc ls_cmd_vote {nick victim} {
 	set victim [string trim $victim]
 
 	if {$victim == ""} {
-		putnotc $nick "Syntax: vote <nick>"
+		ls_putnotc $nick "Syntax: vote <nick>"
 		return
 	}
 
 	if {$chan == ""} {
-		putnotc $nick "You haven't joined any game lobby."
+		ls_putnotc $nick "You haven't joined any game lobby."
 		return
 	}
 
 	if {[ls_get_gamestate $chan] != "vote"} {
-		putnotc $nick "Sorry, you can't use this command right now."
+		ls_putnotc $nick "Sorry, you can't use this command right now."
 		return
 	}
 
 	if {[ls_get_role $chan $victim] == ""} {
-		putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
+		ls_putnotc $nick "Sorry, [ls_format_player $chan $victim] isn't playing the game."
 		return
 	}
 
 	ls_set_vote $chan $nick $victim
-	putnotc $nick "Done."
+	ls_putnotc $nick "Done."
 
 	ls_advance_state $chan
 }
 
 proc ls_msg_cmd_investigate {nick host hand text} {
-	putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
 	ls_cmd_investigate $nick $text
 }
 
@@ -395,12 +403,12 @@ proc ls_add_player {chan nick {forced 0}} {
 
 	if {!$forced} {
 		if {[ls_game_in_progress $chan]} {
-			putnotc $nick "Sorry, you can't join the game right now."
+			ls_putnotc $nick "Sorry, you can't join the game right now."
 			return
 		}
 
 		if {[ls_chan_for_nick $nick] != ""} {
-			putnotc $nick "Sorry, you can't play on multiple channels at once."
+			ls_putnotc $nick "Sorry, you can't play on multiple channels at once."
 			return
 		}
 	}
@@ -408,7 +416,7 @@ proc ls_add_player {chan nick {forced 0}} {
 	ls_set_role $chan $nick lobby
 
 	if {!$forced} {
-		putmsg $chan "[ls_format_player $chan $nick] joined the game ([llength [ls_get_players $chan]] players in the lobby)."
+		ls_putmsg $chan "[ls_format_player $chan $nick] joined the game ([llength [ls_get_players $chan]] players in the lobby)."
 	}
 
 	pushmode $chan +v $nick
@@ -429,9 +437,9 @@ proc ls_remove_player {chan nick {forced 0}} {
 
 	if {!$forced} {
 		if {[ls_game_in_progress $chan]} {
-			putmsg $chan "[ls_format_player $chan $nick 1] committed suicide. Goodbye, cruel world."
+			ls_putmsg $chan "[ls_format_player $chan $nick 1] committed suicide. Goodbye, cruel world."
 		} else {
-			putmsg $chan "[ls_format_player $chan $nick] left the game ([llength [ls_get_players $chan]] players in the lobby)."
+			ls_putmsg $chan "[ls_format_player $chan $nick] left the game ([llength [ls_get_players $chan]] players in the lobby)."
 		}
 	}
 }
@@ -460,7 +468,7 @@ proc ls_set_role {chan nick role} {
 	bncsettag $chan $nick ls_role $role
 
 	if {$role != "" && $role != "lobby"} {
-		putnotc $nick "Your role has been changed to '[ls_format_role $role]'."
+		ls_putnotc $nick "Your role has been changed to '[ls_format_role $role]'."
 	}
 }
 
@@ -471,9 +479,9 @@ proc ls_get_vote {chan nick} {
 proc ls_set_vote {chan nick vote} {
 	if {$vote != ""} {
 		if {![string equal -nocase $nick $vote]} {
-			putmsg $chan "[ls_format_player $chan $nick] voted for [ls_format_player $chan $vote]."
+			ls_putmsg $chan "[ls_format_player $chan $nick] voted for [ls_format_player $chan $vote]."
 		} else {
-			putmsg $chan "[ls_format_player $chan $nick] voted for himself. Oops!"
+			ls_putmsg $chan "[ls_format_player $chan $nick] voted for himself. Oops!"
 		}
 	}
 
@@ -528,7 +536,7 @@ proc ls_start_game {chan} {
 		ls_set_role $chan $player lobby
 	}
 
-	putmsg $chan "Starting the game..."
+	ls_putmsg $chan "Starting the game..."
 
 	# pick scientists
 	set scientists_count 0
@@ -542,7 +550,7 @@ proc ls_start_game {chan} {
 	foreach scientist [ls_get_players $chan scientist] {
 		foreach scientist_notify [ls_get_players $chan scientist] {
 			if {![string equal -nocase $scientist $scientist_notify]} {
-				putnotc $scientist_notify "[ls_format_player $chan $scientist] is also a scientist."
+				ls_putnotc $scientist_notify "[ls_format_player $chan $scientist] is also a scientist."
 			}
 		}
 	}
@@ -561,7 +569,7 @@ proc ls_start_game {chan} {
 		lappend roles "[llength [ls_get_players $chan $role]]x [ls_format_role $role]"
 	}
 
-	putmsg $chan "Roles have been assigned: [join $roles ", "] - Good luck!"
+	ls_putmsg $chan "Roles have been assigned: [join $roles ", "] - Good luck!"
 
 	ls_set_gamestate $chan kill
 	ls_advance_state $chan
@@ -609,7 +617,7 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {![ls_game_in_progress $chan]} {
 		if {[llength $players] < 5} {
 			if {[llength $players] > 0} {
-				putmsg $chan "Game will start when there are at least 5 players."
+				ls_putmsg $chan "Game will start when there are at least 5 players."
 			}
 		} else {
 			ls_start_game $chan
@@ -620,7 +628,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	# game end condition (due to lack of players)
 	if {[llength $players] == 0} {
-		putmsg $chan "Last player left. Closing the game."
+		ls_putmsg $chan "Last player left. Closing the game."
 
 		ls_stop_game $chan
 
@@ -629,7 +637,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	# winning condition for scientists
 	if {[llength $scientists] >= [expr {[llength $players] - [llength $scientists]}]} {
-		putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
+		ls_putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
 
 		ls_stop_game $chan
 
@@ -638,7 +646,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	# winning condition for citizens
 	if {[llength $scientists] == 0} {
-		putmsg $chan "All scientists have been eliminated. The citizens win this round: [ls_format_players $chan $players 1]"
+		ls_putmsg $chan "All scientists have been eliminated. The citizens win this round: [ls_format_players $chan $players 1]"
 
 		ls_stop_game $chan
 
@@ -661,25 +669,25 @@ proc ls_advance_state {chan {delayed 0}} {
 			foreach scientist $scientists {
 				if {[string equal -nocase $killer $scientist]} {
 					ls_set_killer $chan $scientist 1
-					putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill soneone."
+					ls_putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill soneone."
 				} else {
 					ls_set_killer $chan $scientist 0
-					putnotc $scientist "[ls_format_player $chan $killer] is choosing a victim."
+					ls_putnotc $scientist "[ls_format_player $chan $killer] is choosing a victim."
 				}
 			}
 
-			putmsg $chan "The citizens are asleep while the science comittee deliberates on who to kill tonight."
+			ls_putmsg $chan "The citizens are asleep while the science comittee deliberates on who to kill tonight."
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			# TODO: kill/reveal scientist?
 
-			putmsg $chan "The scientists failed to kill anyone tonight."
+			ls_putmsg $chan "The scientists failed to kill anyone tonight."
 
 			ls_set_gamestate $chan investigate
 			ls_advance_state $chan
 		} else {
 			# TODO: advance game if scientist left (optimization) - or maybe pick another scientist?
-			putmsg $chan "The scientists still need to pick someone to kill."
+			ls_putmsg $chan "The scientists still need to pick someone to kill."
 		}
 	}
 
@@ -694,20 +702,20 @@ proc ls_advance_state {chan {delayed 0}} {
 		}
 
 		if {$timeout == -1} {
-			putmsg $chan "It's now up to the investigator to find the killer."
+			ls_putmsg $chan "It's now up to the investigator to find the killer."
 
 			foreach investigator $investigators {
-				putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
+				ls_putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
 			}
 
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
-			putmsg $chan "Looks like the investigator is still firmly asleep."
+			ls_putmsg $chan "Looks like the investigator is still firmly asleep."
 
 			ls_set_gamestate $chan vote
 			ls_advance_state $chan
 		} else {
-			putmsg $chan "The investigator still needs to do their job."
+			ls_putmsg $chan "The investigator still needs to do their job."
 		}
 	}
 
@@ -725,7 +733,7 @@ proc ls_advance_state {chan {delayed 0}} {
 				ls_set_vote $chan $player ""
 			}
 
-			putmsg $chan "It's now up to the citizens to vote who to lynch (via /notice $botnick vote <nick>)."
+			ls_putmsg $chan "It's now up to the citizens to vote who to lynch (via /notice $botnick vote <nick>)."
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan] || [llength $missing_votes] == 0} {
 			array unset votes
@@ -778,14 +786,14 @@ proc ls_advance_state {chan {delayed 0}} {
 
 				lappend vote_msg_parts "${vote_count}x [ls_format_players $chan $votes_reversed($vote_count)]"
 			}
-			putmsg $chan "Votes: [join $vote_msg_parts ", "]"
+			ls_putmsg $chan "Votes: [join $vote_msg_parts ", "]"
 
 			set candidates $votes_reversed([lindex $vote_counts 0])
 			set victim [lindex $candidates [rand [llength $candidates]]]
 
 			ls_debug $chan "lynch candidates: [join $candidates ", "] - picked: $victim"
 
-			putmsg $chan "[ls_format_player $chan $victim 1] was lynched by the angry mob."
+			ls_putmsg $chan "[ls_format_player $chan $victim 1] was lynched by the angry mob."
 
 			ls_remove_player $chan $victim 1
 
@@ -793,7 +801,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_advance_state $chan
 
 		} else {
-			putmsg $chan "Some of the citizens still need to vote: [ls_format_players $chan $missing_votes]"
+			ls_putmsg $chan "Some of the citizens still need to vote: [ls_format_players $chan $missing_votes]"
 		}
 	}
 }
