@@ -720,13 +720,13 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	# game start condition
 	if {![ls_game_in_progress $chan]} {
-		if {[llength $players] < 5} {
+		if {[llength $players] < 6} {
 			if {[llength $players] > 0} {
 				if {[ls_gamestate_timeout_exceeded $chan]} {
 					ls_putmsg $chan "Lobby was closed because there aren't enough players."
 					ls_stop_game $chan
 				} else {
-					ls_putmsg $chan "Game will start when there are at least 5 players."
+					ls_putmsg $chan "Game will start when there are at least 6 players."
 				}
 			}
 		} else {
