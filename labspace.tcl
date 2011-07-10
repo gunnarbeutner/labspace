@@ -28,9 +28,9 @@
 # [-] different weapons
 # [-] secret voting
 # [x] vote breaks when candidate leaves before vote is finished
-# [ ] close lobby if there aren't enough players (rather than spamming for hours)
+# [x] close lobby if there aren't enough players (rather than spamming for hours)
 # [x] !add / !remove
-# [ ] CPRIVMSG/CNOTICE
+# [x] CPRIVMSG/CNOTICE
 
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
@@ -467,6 +467,7 @@ proc ls_add_player {chan nick {forced 0}} {
 	}
 
 	ls_set_gamestate_delay $chan 30
+	ls_set_gamestate_timeout $chan 90
 }
 
 proc ls_remove_player {chan nick {forced 0}} {
@@ -490,6 +491,9 @@ proc ls_remove_player {chan nick {forced 0}} {
 		}
 
 		ls_putnotc $nick "You were removed from the lobby."
+
+		ls_set_gamestate_delay $chan 30
+		ls_set_gamestate_timeout $chan 90
 	}
 }
 
@@ -680,7 +684,12 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {![ls_game_in_progress $chan]} {
 		if {[llength $players] < 5} {
 			if {[llength $players] > 0} {
-				ls_putmsg $chan "Game will start when there are at least 5 players."
+				if {[ls_gamestate_timeout_exceeded $chan]} {
+					ls_putmsg $chan "Lobby was closed because there aren't enough players."
+					ls_stop_game $chan
+				} else {
+					ls_putmsg $chan "Game will start when there are at least 5 players."
+				}
 			}
 		} else {
 			ls_start_game $chan
