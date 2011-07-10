@@ -425,6 +425,7 @@ proc ls_timer_announce_players {arg} {
 
 	setctx $user
 	ls_announce_players $chan
+	flushmode $chan
 }
 
 proc ls_announce_players {chan} {
@@ -675,6 +676,7 @@ proc ls_timer_advance_state {user} {
 
 	foreach chan [internalchannels] {
 		ls_advance_state $chan 1
+		flushmode $chan
 	}
 }
 
