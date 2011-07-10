@@ -900,8 +900,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 			ls_set_gamestate $chan kill
 			ls_advance_state $chan
-
-		} elseif {$delay} {
+		} elseif {$delayed} {
 			ls_putmsg $chan "Some of the citizens still need to vote: [ls_format_players $chan $missing_votes]"
 		}
 	}
