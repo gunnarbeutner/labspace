@@ -30,6 +30,7 @@
 # [x] vote breaks when candidate leaves before vote is finished
 # [ ] close lobby if there aren't enough players (rather than spamming for hours)
 # [x] !add / !remove
+# [ ] CPRIVMSG/CNOTICE
 
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
@@ -71,12 +72,37 @@ proc ls_debug {chan message} {
 	#ls_putmsg $chan "DEBUG: $message"
 }
 
+proc ls_get_cmsg_chan {target} {
+	set cmsg_target ""
+
+	foreach chan [internalchannels] {
+		if {[onchan $target $chan] && [botisop $chan]} {
+			set cmsg_target $chan
+			break
+		}
+	}
+
+	return $cmsg_target
+}
+
 proc ls_putnotc {target text} {
-	putquick "NOTICE $target :$text"
+	set cnotice_chan [ls_get_cmsg_chan $target]
+
+	if {$cnotice_chan == ""} {
+		putquick "NOTICE $target :$text"
+	} else {
+		putquick "CNOTICE $target $cnotice_chan :$text"
+	}
 }
 
 proc ls_putmsg {target text} {
-	putquick "PRIVMSG $target :$text"
+	set cprivmsg_chan [ls_get_cmsg_chan $target]
+
+	if {$cprivmsg_chan == ""} {
+		putquick "PRIVMSG $target :$text"
+	} else {
+		putquick "CPRIVMSG $target $cprivmsg_chan :$text"
+	}
 }
 
 proc ls_format_role {role} {
