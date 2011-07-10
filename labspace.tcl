@@ -286,7 +286,7 @@ proc ls_pub_cmd_wait {nick host hand chan arg} {
 		ls_putnotc $nick "Sorry, there's no lobby at the moment."
 	}
 
-	if {[ls_get_role $chan $nick]} {
+	if {[ls_get_role $chan $nick] != "lobby"} {
 		ls_putnotc $nick "Sorry, you need to be in the lobby to use this command."
 		return
 	}
