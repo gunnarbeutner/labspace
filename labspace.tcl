@@ -235,7 +235,6 @@ proc ls_pub_cmd_add {nick host hand chan arg} {
 
 proc ls_cmd_remove {chan nick} {
 	ls_remove_player $chan $nick
-	ls_advance_state $chan
 }
 
 proc ls_pub_cmd_nolabspace {nick host hand chan arg} {
