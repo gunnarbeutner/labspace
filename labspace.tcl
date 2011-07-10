@@ -641,7 +641,8 @@ proc ls_start_game {chan} {
 
 	# pick scientists
 	set scientists_count 0
-	while {$scientists_count < [ls_number_scientists [llength $players]]} {
+	set scientists_needed [ls_number_scientists [llength $players]]
+	while {$scientists_count < $scientists_needed} {
 		set scientist [ls_pick_player players]
 		ls_set_role $chan $scientist scientist
 		incr scientists_count
