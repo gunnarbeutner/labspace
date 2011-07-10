@@ -708,15 +708,6 @@ proc ls_advance_state {chan {delayed 0}} {
 		return
 	}
 
-	# game end condition (due to lack of players)
-	if {[llength $players] == 0} {
-		ls_putmsg $chan "Last player left. Closing the game."
-
-		ls_stop_game $chan
-
-		return
-	}
-
 	# winning condition for scientists
 	if {[llength $scientists] >= [expr {[llength $players] - [llength $scientists]}]} {
 		ls_putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
