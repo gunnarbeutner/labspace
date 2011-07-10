@@ -521,7 +521,7 @@ proc ls_remove_player {chan nick {forced 0}} {
 	if {!$forced} {
 		if {[ls_get_announced $chan $nick]} {
 			if {[ls_game_in_progress $chan]} {
-				ls_putmsg $chan "[ls_format_player $chan $nick 1] committed suicide. Goodbye, cruel world."
+				ls_putmsg $chan "[ls_format_player $chan $nick] committed suicide. Goodbye, cruel world."
 			} else {
 				ls_putmsg $chan "[ls_format_player $chan $nick] left the game ([llength [ls_get_players $chan]] players in the lobby)."
 			}
