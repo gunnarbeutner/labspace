@@ -38,6 +38,8 @@ bind pub - !nolabspace ls_pub_cmd_remove
 bind pub - !add ls_pub_cmd_add
 bind pub - !remove ls_pub_cmd_remove
 
+bind pub - !wait ls_pub_cmd_wait
+
 bind msg - kill ls_msg_cmd_kill
 bind notc - kill* ls_notc_cmd_kill
 
@@ -274,6 +276,21 @@ proc ls_pub_cmd_remove {nick host hand chan arg} {
 	}
 
 	ls_cmd_remove $chan $nick
+}
+
+proc ls_pub_cmd_wait {nick host hand chan arg} {
+	if {[ls_game_in_progress $chan]} {
+		ls_putnotc $nick "Sorry, there's no lobby at the moment."
+	}
+
+	if {[ls_get_role $chan $nick]} {
+		ls_putnotc $nick "Sorry, you need to be in the lobby to use this command."
+		return
+	}
+
+	ls_set_gamestate_timeout $chan 120
+
+	ls_putmsg $chan "Lobby timeout was reset."
 }
 
 proc ls_cmd_kill {nick victim} {
