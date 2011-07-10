@@ -322,13 +322,17 @@ proc ls_cmd_kill {nick victim} {
 		return
 	}
 
-	if {[string equal -nocase $victim $nick]} {
-		ls_putmsg $chan "[ls_format_player $chan $victim 1] committed suicide."
+	if {[rand 100] > 85 && [llength [ls_get_players $chan scientist]] >= 2} {
+		ls_putmsg $chan "The scientists' attack was not successfully tonight. Nobody died."
 	} else {
-		if {[ls_get_role $chan $victim] == "scientist"} {
-			ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered. Oops."
+		if {[string equal -nocase $victim $nick]} {
+			ls_putmsg $chan "[ls_format_player $chan $victim 1] committed suicide."
 		} else {
-			ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
+			if {[ls_get_role $chan $victim] == "scientist"} {
+				ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered. Oops."
+			} else {
+				ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
+			}
 		}
 	}
 
@@ -377,6 +381,10 @@ proc ls_cmd_investigate {nick victim} {
 		if {![string equal -nocase $nick $investigator]} {
 			ls_putnotc $investigator "Another investigator picked a target."
 		}
+	}
+
+	if {[rand 100] > 85} {
+		ls_putmsg $chan "[ls_format_player $chan $nick]'s fine detective work reveals [ls_format_player $chan $victim]'s role: [ls_format_role [ls_get_role $chan $victim]]"
 	}
 
 	if {[string equal -nocase $nick $victim]} {
