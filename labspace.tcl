@@ -803,7 +803,7 @@ proc ls_advance_state {chan {delayed 0}} {
 		}
 
 		if {$timeout == -1} {
-			ls_putmsg $chan "It's now up to the investigator to find the killer."
+			ls_putmsg $chan "It's now up to the investigator to find the mad scientists."
 
 			foreach investigator $investigators {
 				ls_putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
