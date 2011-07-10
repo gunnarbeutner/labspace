@@ -19,8 +19,8 @@
 # [x] timeout for game start, rather than player limit
 # [x] minimum delay for ls_advance_state timer
 # [ ] texts
-# [ ] randomly reveal investigator's result
-# [ ] randomly failed assassination attempts
+# [x] randomly reveal investigator's result
+# [x] randomly failed assassination attempts
 # [x] vote: don't show 0x votes
 # [ ] highscores
 # [x] show role counts
@@ -31,6 +31,9 @@
 # [x] close lobby if there aren't enough players (rather than spamming for hours)
 # [x] !add / !remove
 # [x] CPRIVMSG/CNOTICE
+# [ ] list remaining players after each round (for irssi users)
+# [x] !wait cmd to hold lobby open
+# [ ] devoice players before announcing that they were killed
 
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
