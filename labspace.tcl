@@ -770,7 +770,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			foreach scientist $scientists {
 				if {[string equal -nocase $killer $scientist]} {
 					ls_set_killer $chan $scientist 1
-					ls_putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill soneone."
+					ls_putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill someone."
 				} else {
 					ls_set_killer $chan $scientist 0
 					ls_putnotc $scientist "[ls_format_player $chan $killer] is choosing a victim."
