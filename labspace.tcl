@@ -394,6 +394,22 @@ proc ls_notc_cmd_vote {nick host hand text {dest ""}} {
 	ls_cmd_vote $nick [join [lrange [split $text] 1 end]]
 }
 
+proc ls_announce_players {chan} {
+	set new_players [list]
+
+	foreach player [ls_get_players $chan] {
+		if {![ls_get_announced $chan $player]} {
+			lappend new_players $player
+			pushmode $chan +v $player
+			ls_set_announced $chan $player 1
+		}
+	}
+
+	if {[llength $new_players] > 0} {
+		ls_putmsg $chan "[ls_format_players $chan $new_players] joined the game ([llength [ls_get_players $chan]] players in the lobby)."
+	}
+}
+
 proc ls_add_player {chan nick {forced 0}} {
 	set role [ls_get_role $chan $nick]
 
@@ -414,12 +430,16 @@ proc ls_add_player {chan nick {forced 0}} {
 	}
 
 	ls_set_role $chan $nick lobby
+	ls_set_announced $chan $nick $forced
 
 	if {!$forced} {
-		ls_putmsg $chan "[ls_format_player $chan $nick] joined the game ([llength [ls_get_players $chan]] players in the lobby)."
+		ls_set_announced $chan $nick 0
+		internaltimer 5 0 ls_announce_players $chan
+		ls_putnotc $nick "You were added to the lobby."
+	} else {
+		ls_set_announced $chan $nick 1
+		pushmode $chan +v $nick
 	}
-
-	pushmode $chan +v $nick
 
 	ls_set_gamestate_delay $chan 30
 }
@@ -436,11 +456,15 @@ proc ls_remove_player {chan nick {forced 0}} {
 	pushmode $chan -v $nick
 
 	if {!$forced} {
-		if {[ls_game_in_progress $chan]} {
-			ls_putmsg $chan "[ls_format_player $chan $nick 1] committed suicide. Goodbye, cruel world."
-		} else {
-			ls_putmsg $chan "[ls_format_player $chan $nick] left the game ([llength [ls_get_players $chan]] players in the lobby)."
+		if {[ls_get_announced $chan $nick]} {
+			if {[ls_game_in_progress $chan]} {
+				ls_putmsg $chan "[ls_format_player $chan $nick 1] committed suicide. Goodbye, cruel world."
+			} else {
+				ls_putmsg $chan "[ls_format_player $chan $nick] left the game ([llength [ls_get_players $chan]] players in the lobby)."
+			}
 		}
+
+		ls_putnotc $nick "You were removed from the lobby."
 	}
 }
 
@@ -494,6 +518,20 @@ proc ls_get_killer {chan nick} {
 
 proc ls_set_killer {chan nick killer} {
 	bncsettag $chan $nick ls_killer $killer
+}
+
+proc ls_get_announced {chan nick} {
+	set result [bncgettag $chan $nick ls_announced]
+
+	if {$result == ""} {
+		return 0
+	}
+
+	return $result
+}
+
+proc ls_set_announced {chan nick announced} {
+	bncsettag $chan $nick ls_announced $announced
 }
 
 proc ls_pick_player {playersVar} {
