@@ -51,7 +51,7 @@ bind part - * ls_leave_handler
 bind sign - * ls_leave_handler
 bind kick - * ls_kick_handler
 
-internaltimer 10 1 ls_timer_advance_state
+internaltimer 10 1 ls_timer_advance_state [getctx]
 
 # work-around for a bug in sbnc's floodcontrol code
 internaltimer 1 1 ls_bug_timer
@@ -419,6 +419,14 @@ proc ls_notc_cmd_vote {nick host hand text {dest ""}} {
 	ls_cmd_vote $nick [join [lrange [split $text] 1 end]]
 }
 
+proc ls_timer_announce_players {arg} {
+	set user [lindex $arg 0]
+	set chan [lindex $arg 1]
+
+	setctx $user
+	ls_announce_players $chan
+}
+
 proc ls_announce_players {chan} {
 	set new_players [list]
 
@@ -459,7 +467,7 @@ proc ls_add_player {chan nick {forced 0}} {
 
 	if {!$forced} {
 		ls_set_announced $chan $nick 0
-		internaltimer 5 0 ls_announce_players $chan
+		internaltimer 5 0 ls_timer_announce_players [list [getctx] $chan]
 		ls_putnotc $nick "You were added to the lobby."
 	} else {
 		ls_set_announced $chan $nick 1
@@ -662,7 +670,9 @@ proc ls_kick_handler {nick uhost hand chan target reason} {
 	ls_advance_state $chan
 }
 
-proc ls_timer_advance_state {} {
+proc ls_timer_advance_state {user} {
+	setctx $user
+
 	foreach chan [internalchannels] {
 		ls_advance_state $chan 1
 	}
