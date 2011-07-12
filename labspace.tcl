@@ -454,15 +454,20 @@ proc ls_cmd_vote {nick victim} {
 		return
 	}
 
+	if {[string equal -nocase [ls_get_vote $chan $nick] $victim]} {
+		ls_putnotc $nick "You already voted for [ls_format_player $chan $victim]."
+		return
+	}
+
 	ls_set_vote $chan $nick $victim
 	ls_putnotc $nick "Done."
 
 	ls_advance_state $chan
 }
 
-proc ls_msg_cmd_investigate {nick host hand text} {
+proc ls_msg_cmd_vote {nick host hand text} {
 	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
-	ls_cmd_investigate $nick $text
+	ls_cmd_vote $nick $text
 }
 
 proc ls_notc_cmd_vote {nick host hand text {dest ""}} {
