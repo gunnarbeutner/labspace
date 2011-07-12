@@ -34,6 +34,7 @@
 # [ ] list remaining players after each round (for irssi users)
 # [x] !wait cmd to hold lobby open
 # [ ] devoice players before announcing that they were killed
+# [ ] document code
 
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
@@ -63,6 +64,7 @@ internaltimer 1 1 ls_bug_timer
 
 proc ls_bug_timer {} {}
 
+# clear game state when the bot gets disconnected from IRC
 internalbind svrdisconnect ls_clear_state
 
 proc ls_clear_state {} {
@@ -77,6 +79,8 @@ proc ls_debug {chan message} {
 	#ls_putmsg $chan "DEBUG: $message"
 }
 
+# returns the name of a channel that can be used for CNOTICE/CPRIVMSG
+# to send messages to the specified target
 proc ls_get_cmsg_chan {target} {
 	set cmsg_target ""
 
@@ -90,6 +94,7 @@ proc ls_get_cmsg_chan {target} {
 	return $cmsg_target
 }
 
+# sends a notice to specified target
 proc ls_putnotc {target text} {
 	set cnotice_chan [ls_get_cmsg_chan $target]
 
@@ -100,6 +105,7 @@ proc ls_putnotc {target text} {
 	}
 }
 
+# sends a message to the specified target
 proc ls_putmsg {target text} {
 	set cprivmsg_chan [ls_get_cmsg_chan $target]
 
@@ -110,6 +116,7 @@ proc ls_putmsg {target text} {
 	}
 }
 
+# formats the specified role identifier for output in a message
 proc ls_format_role {role} {
 	if {$role == "scientist"} {
 		return "Mad Scientist"
@@ -122,6 +129,8 @@ proc ls_format_role {role} {
 	}
 }
 
+# formats the specified player name for output in a message (optionally
+# revealing that player's role in the game)
 proc ls_format_player {chan player {reveal 0}} {
 	set no_highlight_player "[string range $player 0 0]\002\002[string range $player 1 end]"
 
@@ -132,6 +141,8 @@ proc ls_format_player {chan player {reveal 0}} {
 	}
 }
 
+# formats a list of player names for output in a message (optionally
+# revealing their roles in the game)
 proc ls_format_players {chan players {reveal 0}} {
 	set hr_list {}
 
@@ -152,6 +163,7 @@ proc ls_format_players {chan players {reveal 0}} {
 	return $hr_list
 }
 
+# returns the current state of the game
 proc ls_get_gamestate {chan} {
 	global ls_gamestate
 
@@ -162,6 +174,7 @@ proc ls_get_gamestate {chan} {
 	return $ls_gamestate($chan)
 }
 
+# sets the timeout for the current game state
 proc ls_get_gamestate_timeout {chan} {
 	global ls_gamestate_timeout
 
@@ -172,6 +185,7 @@ proc ls_get_gamestate_timeout {chan} {
 	return $ls_gamestate_timeout($chan)
 }
 
+# returns 1 if the game state delay was exceeded, 0 otherwise
 proc ls_gamestate_delay_exceeded {chan} {
 	global ls_gamestate_delay
 
@@ -186,6 +200,7 @@ proc ls_gamestate_delay_exceeded {chan} {
 	}
 }
 
+# sets the game state
 proc ls_set_gamestate {chan state} {
 	global ls_gamestate ls_gamestate_timeout
 
@@ -197,6 +212,7 @@ proc ls_set_gamestate {chan state} {
 	ls_debug $chan "changed gamestate to $state"
 }
 
+# sets the game state timeout (in seconds)
 proc ls_set_gamestate_timeout {chan timeout} {
 	global ls_gamestate_timeout
 
@@ -209,6 +225,7 @@ proc ls_set_gamestate_timeout {chan timeout} {
 	ls_debug $chan "changed gamestate timeout to $timeout"
 }
 
+# sets the game state delay (in seconds)
 proc ls_set_gamestate_delay {chan delay} {
 	global ls_gamestate_delay
 
@@ -217,6 +234,7 @@ proc ls_set_gamestate_delay {chan delay} {
 	ls_debug $chan "changed gamestate delay to $delay"
 }
 
+# returns 1 if the game state timeout was exceeded, 0 otherwise
 proc ls_gamestate_timeout_exceeded {chan} {
 	set now [clock seconds]
 	set timeout [ls_get_gamestate_timeout $chan]
@@ -228,6 +246,7 @@ proc ls_gamestate_timeout_exceeded {chan} {
 	}
 }
 
+# returns 1 if there's a game in progress, 0 otherwise
 proc ls_game_in_progress {chan} {
 	if {[ls_get_gamestate $chan] == "lobby"} {
 		return 0
@@ -236,6 +255,8 @@ proc ls_game_in_progress {chan} {
 	}
 }
 
+# returns the name of the channel the specified nick is playing on
+# if the nick isn't playing any games "" is returned instead
 proc ls_chan_for_nick {nick} {
 	foreach chan [internalchannels] {
 		if {[ls_get_role $chan $nick] != ""} {
