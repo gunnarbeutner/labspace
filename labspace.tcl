@@ -359,9 +359,9 @@ proc ls_cmd_kill {nick victim} {
 				ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
 			}
 		}
-	}
 
-	ls_remove_player $chan $victim 1
+		ls_remove_player $chan $victim 1
+	}
 
 	ls_set_gamestate $chan investigate
 	ls_advance_state $chan
