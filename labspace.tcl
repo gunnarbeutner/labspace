@@ -313,6 +313,7 @@ proc ls_pub_cmd_wait {nick host hand chan arg} {
 	}
 
 	ls_set_gamestate_timeout $chan 120
+	ls_set_gamestate_delay $chan 45
 
 	ls_putmsg $chan "Lobby timeout was reset."
 }
