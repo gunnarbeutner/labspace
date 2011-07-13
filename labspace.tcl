@@ -374,6 +374,8 @@ proc ls_cmd_kill {nick victim} {
 	if {[rand 100] > 85 && [llength [ls_get_players $chan scientist]] >= 2} {
 		ls_putmsg $chan "The scientists' attack was not successfully tonight. Nobody died."
 	} else {
+		ls_devoice_player $chan $victim
+
 		if {[string equal -nocase $victim $nick]} {
 			ls_putmsg $chan "[ls_format_player $chan $victim 1] committed suicide."
 		} else {
@@ -513,8 +515,8 @@ proc ls_announce_players {chan} {
 	foreach player [ls_get_players $chan] {
 		if {![ls_get_announced $chan $player]} {
 			lappend new_players $player
-			pushmode $chan +v $player
 			ls_set_announced $chan $player 1
+			ls_voice_player $chan $player
 		}
 	}
 
@@ -551,11 +553,24 @@ proc ls_add_player {chan nick {forced 0}} {
 		ls_putnotc $nick "You were added to the lobby."
 	} else {
 		ls_set_announced $chan $nick 1
-		pushmode $chan +v $nick
+		ls_voice_player $chan $nick
 	}
 
 	ls_set_gamestate_delay $chan 30
 	ls_set_gamestate_timeout $chan 90
+}
+
+proc ls_voice_player {chan nick} {
+	if {![isvoice $nick $chan]} {
+		pushmode $chan +v $nick
+	}
+}
+
+proc ls_devoice_player {chan nick} {
+	if {[isvoice $nick $chan]} {
+		pushmode $chan -v $nick
+		flushmode $chan
+	}
 }
 
 proc ls_remove_player {chan nick {forced 0}} {
@@ -681,9 +696,9 @@ proc ls_start_game {chan} {
 	# make sure all players are voiced and everyone else is de-voiced
 	foreach nick [internalchanlist $chan] {
 		if {[lsearch -exact $players $nick] != -1} {
-			if {![isvoice $nick $chan]} { pushmode $chan +v $nick }
+			ls_voice_player $chan $nick
 		} else {
-			if {[isvoice $nick $chan]} { pushmode $chan -v $nick }
+			ls_devoice_player $chan $nick
 		}
 	}
 
@@ -948,8 +963,8 @@ proc ls_advance_state {chan {delayed 0}} {
 
 			ls_debug $chan "lynch candidates: [join $candidates ", "] - picked: $victim"
 
+			ls_devoice_player $chan $victim
 			ls_putmsg $chan "[ls_format_player $chan $victim 1] was lynched by the angry mob."
-
 			ls_remove_player $chan $victim 1
 
 			ls_set_gamestate $chan kill
