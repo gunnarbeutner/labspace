@@ -361,8 +361,8 @@ proc ls_cmd_kill {nick victim} {
 		return
 	}
 
-	if {[ls_get_killer $chan $nick] != 1} {
-		ls_putnotc $nick "Sorry, it's not your turn."
+	if {[ls_get_active $chan $nick] != 1} {
+		ls_putnotc $nick "Sorry, it's not your turn to choose a victim."
 		return
 	}
 
@@ -392,7 +392,7 @@ proc ls_cmd_kill {nick victim} {
 }
 
 proc ls_msg_cmd_kill {nick host hand text} {
-	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should use /notice instead."
 	ls_cmd_kill $nick $text
 }
 
@@ -446,7 +446,7 @@ proc ls_cmd_investigate {nick victim} {
 }
 
 proc ls_msg_cmd_investigate {nick host hand text} {
-	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should use /notice instead."
 	ls_cmd_investigate $nick $text
 }
 
@@ -490,7 +490,7 @@ proc ls_cmd_vote {nick victim} {
 }
 
 proc ls_msg_cmd_vote {nick host hand text} {
-	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should be using /notice instead."
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should use /notice instead."
 	ls_cmd_vote $nick $text
 }
 
