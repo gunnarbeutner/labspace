@@ -690,13 +690,7 @@ proc ls_pick_player {playersVar} {
 }
 
 proc ls_number_scientists {numPlayers} {
-	if {$numPlayers <= 7} {
-		return 1
-	} elseif {$numPlayers <= 12} {
-		return 2
-	} else {
-		return 3
-	}
+	return [expr {int(ceil(($numPlayers - 2) / 5.0))}]
 }
 
 proc ls_start_game {chan} {
