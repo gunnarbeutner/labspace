@@ -634,10 +634,21 @@ proc ls_get_vote {chan nick} {
 
 proc ls_set_vote {chan nick vote} {
 	if {$vote != ""} {
+		set count 0
+		foreach player [ls_get_players $chan] {
+			if {[string equal -nocase [ls_get_vote $chan $player] $vote]} {
+				incr count
+			}
+		}
+
 		if {![string equal -nocase $nick $vote]} {
-			ls_putmsg $chan "[ls_format_player $chan $nick] voted for [ls_format_player $chan $vote]."
+			if {[ls_get_vote $chan $nick] != ""} {
+				ls_putmsg $chan "[ls_format_player $chan $nick] changed their vote to [ls_format_player $chan $vote] ($count votes)."
+			} else {
+				ls_putmsg $chan "[ls_format_player $chan $nick] voted for [ls_format_player $chan $vote] ($count votes)."
+			}
 		} else {
-			ls_putmsg $chan "[ls_format_player $chan $nick] voted for himself. Oops!"
+			ls_putmsg $chan "[ls_format_player $chan $nick] voted for himself. Oops! ($count votes)"
 		}
 	}
 
