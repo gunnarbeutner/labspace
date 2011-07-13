@@ -16,25 +16,23 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 # TODO:
-# [x] timeout for game start, rather than player limit
-# [x] minimum delay for ls_advance_state timer
 # [ ] texts
-# [x] randomly reveal investigator's result
-# [x] randomly failed assassination attempts
-# [x] vote: don't show 0x votes
 # [ ] highscores
-# [x] show role counts
-# [x] warn players about /msg
 # [-] different weapons
 # [-] secret voting
-# [x] vote breaks when candidate leaves before vote is finished
-# [x] close lobby if there aren't enough players (rather than spamming for hours)
-# [x] !add / !remove
-# [x] CPRIVMSG/CNOTICE
 # [ ] list remaining players after each round (for irssi users)
-# [x] !wait cmd to hold lobby open
-# [ ] devoice players before announcing that they were killed
+# [x] devoice players before announcing that they were killed
 # [ ] document code
+# [ ] performance counters
+# [x] show more information about votes
+# [ ] advance game state if active scientist/investigator leaves the channel
+# [ ] remove "Done." notice for votes?
+# [ ] tweak sbnc's floodcontrol code
+
+# configuration options
+set ::ls_min_players 6
+set ::ls_use_cmsg 1
+set ::ls_debugmode 0
 
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
@@ -75,19 +73,44 @@ proc ls_clear_state {} {
 	array unset ls_gamestate_delay
 }
 
+# performance counter support
+if {[llength [info procs perfc_open]] > 0} {
+	if {[info exists ::ls_perfc_handle]} {
+		perfc_close $::ls_perfc_handle
+	}
+
+	set ::ls_perfc_handle [perfc_open labspace.perfc]
+} else {
+	# stubs in case the performance counter module is unavailable
+	proc perfc_resolve {args} {}
+	proc perfc_get {handle path} { return 0 }
+	proc perfc_set {handle path value} {}
+	proc perfc_incr {handle path} {}
+}
+
+# sends a debug message
 proc ls_debug {chan message} {
-	#ls_putmsg $chan "DEBUG: $message"
+	global ls_debugmode
+
+	if {$ls_debugmode} {
+		ls_putmsg $chan "DEBUG: $message"
+	}
 }
 
 # returns the name of a channel that can be used for CNOTICE/CPRIVMSG
-# to send messages to the specified target
+# to send messages to the specified target, returns "" if no suitable
+# channel was found or if use of CNOTICE/CPRIVMSG is disabled
 proc ls_get_cmsg_chan {target} {
+	global ls_use_cmsg
+
 	set cmsg_target ""
 
-	foreach chan [internalchannels] {
-		if {[onchan $target $chan] && [botisop $chan]} {
-			set cmsg_target $chan
-			break
+	if {$ls_use_cmsg} {
+		foreach chan [internalchannels] {
+			if {[onchan $target $chan] && [botisop $chan]} {
+				set cmsg_target $chan
+				break
+			}
 		}
 	}
 
@@ -312,6 +335,7 @@ proc ls_pub_cmd_wait {nick host hand chan arg} {
 		return
 	}
 
+	# extend the timeout / delay for the lobby game state
 	ls_set_gamestate_timeout $chan 120
 	ls_set_gamestate_delay $chan 45
 
@@ -737,7 +761,7 @@ proc ls_timer_advance_state {user} {
 }
 
 proc ls_advance_state {chan {delayed 0}} {
-	global botnick
+	global botnick ls_perfc_handle ls_min_players
 
 	if {$delayed && ![ls_gamestate_delay_exceeded $chan]} {
 		return
@@ -750,13 +774,13 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	# game start condition
 	if {![ls_game_in_progress $chan]} {
-		if {[llength $players] < 6} {
+		if {[llength $players] < $ls_min_players} {
 			if {[llength $players] > 0} {
 				if {[ls_gamestate_timeout_exceeded $chan]} {
 					ls_putmsg $chan "Lobby was closed because there aren't enough players."
 					ls_stop_game $chan
 				} else {
-					ls_putmsg $chan "Game will start when there are at least 6 players."
+					ls_putmsg $chan "Game will start when there are at least ${ls_min_players} players."
 				}
 			}
 		} else {
