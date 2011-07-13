@@ -655,12 +655,12 @@ proc ls_set_vote {chan nick vote} {
 	bncsettag $chan $nick ls_vote $vote
 }
 
-proc ls_get_killer {chan nick} {
-	return [bncgettag $chan $nick ls_killer]
+proc ls_get_active {chan nick} {
+	return [bncgettag $chan $nick ls_active]
 }
 
-proc ls_set_killer {chan nick killer} {
-	bncsettag $chan $nick ls_killer $killer
+proc ls_set_active {chan nick active} {
+	bncsettag $chan $nick ls_active $active
 }
 
 proc ls_get_announced {chan nick} {
@@ -797,6 +797,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	set players [ls_get_players $chan]
 	set scientists [ls_get_players $chan scientist]
+	set investigators [ls_get_players $chan investigator]
 
 	# game start condition
 	if {![ls_game_in_progress $chan]} {
@@ -840,29 +841,28 @@ proc ls_advance_state {chan {delayed 0}} {
 
 	if {$state == "kill"} {
 		if {$timeout == -1} {
-			foreach scientist $scientists {
-				ls_set_killer $chan $scientist 0
-			}
-
 			set candidates $scientists
-			set killer [ls_pick_player candidates]
+			set active_scientist [ls_pick_player candidates]
 
 			foreach scientist $scientists {
-				if {[string equal -nocase $killer $scientist]} {
-					ls_set_killer $chan $scientist 1
+				if {[string equal -nocase $active_scientist $scientist]} {
+					ls_set_active $chan $scientist 1
 					ls_putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill someone."
 				} else {
-					ls_set_killer $chan $scientist 0
-					ls_putnotc $scientist "[ls_format_player $chan $killer] is choosing a victim."
+					ls_set_active $chan $scientist 0
+					ls_putnotc $scientist "[ls_format_player $chan $active_scientist] is choosing a victim."
 				}
 			}
 
-			ls_putmsg $chan "The citizens are asleep while the science comittee deliberates on who to kill tonight."
+			if {[llength $scientists] > 1} {
+				ls_putmsg $chan "The citizens are asleep while the mad scientists are choosing a target."
+			} else {
+				ls_putmsg $chan "The citizens are asleep while the mad scientist is choosing a target."
+			}
+
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
-			# TODO: kill/reveal scientist?
-
-			ls_putmsg $chan "The scientists failed to kill anyone tonight."
+			ls_putmsg $chan "The scientists failed to set their alarm clocks. Nobody dies tonight."
 
 			ls_set_gamestate $chan investigate
 			ls_advance_state $chan
@@ -873,20 +873,31 @@ proc ls_advance_state {chan {delayed 0}} {
 	}
 
 	if {$state == "investigate"} {
-		set investigators [ls_get_players $chan investigator]
-
 		if {[llength $investigators] == 0} {
-			# the investigator is already dead
+			# the investigators are already dead
 			ls_set_gamestate $chan vote
 			ls_advance_state $chan
 			return
 		}
 
 		if {$timeout == -1} {
-			ls_putmsg $chan "It's now up to the investigator to find the mad scientists."
+			set candidates $investigators
+			set active_investigator [ls_pick_player candidates]
 
 			foreach investigator $investigators {
-				ls_putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
+				if {[string equal -nocase $active_investigator $investigator]} {
+					ls_set_active $chan $investigator 1
+					ls_putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
+				} else {
+					ls_set_active $chan $investigator 0
+					ls_putnotc $investigator "Another investigator is choosing a target."
+				}
+			}
+
+			if {[llength $investigators] > 1} {
+				ls_putmsg $chan "It's now up to the investigators to find the mad scientists."
+			} else {
+				ls_putmsg $chan "It's now up to the investigator to find the mad scientists."
 			}
 
 			ls_set_gamestate_timeout $chan 120
