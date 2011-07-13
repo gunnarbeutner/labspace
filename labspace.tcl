@@ -815,6 +815,7 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {[llength $scientists] >= [expr {[llength $players] - [llength $scientists]}]} {
 		ls_putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
 
+		perfc_incr $ls_perfc_handle [perfc_resolve wins_scientists]
 		ls_stop_game $chan
 
 		return
@@ -824,6 +825,7 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {[llength $scientists] == 0} {
 		ls_putmsg $chan "All scientists have been eliminated. The citizens win this round: [ls_format_players $chan $players 1]"
 
+		perfc_incr $ls_perfc_handle [perfc_resolve wins_citizens]
 		ls_stop_game $chan
 
 		return
@@ -858,10 +860,11 @@ proc ls_advance_state {chan {delayed 0}} {
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "The scientists failed to set their alarm clocks. Nobody dies tonight."
 
+			perfc_incr $ls_perfc_handle [perfc_resolve timeouts_kill]
 			ls_set_gamestate $chan investigate
 			ls_advance_state $chan
 		} else {
-			# TODO: advance game if scientist left (optimization) - or maybe pick another scientist?
+			perfc_incr $ls_perfc_handle [perfc_resolve delays_kill]
 			ls_putmsg $chan "The scientists still need to pick someone to kill."
 		}
 	}
@@ -898,9 +901,11 @@ proc ls_advance_state {chan {delayed 0}} {
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "Looks like the investigator is still firmly asleep."
 
+			perfc_incr $ls_perfc_handle [perfc_resolve timeouts_investigate]
 			ls_set_gamestate $chan vote
 			ls_advance_state $chan
 		} else {
+			perfc_incr $ls_perfc_handle [perfc_resolve delays_investigate]
 			ls_putmsg $chan "The investigator still needs to do their job."
 		}
 	}
@@ -922,6 +927,10 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_putmsg $chan "It's now up to the citizens to vote who to lynch (via /notice $botnick vote <nick>)."
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan] || [llength $missing_votes] == 0} {
+			if {[ls_gamestate_timeout_exceeded $chan]} {
+				perfc_incr $ls_perfc_handle [perfc_resolve timeouts_vote]
+			}
+
 			array unset votes
 
 			foreach player $players {
@@ -986,6 +995,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_set_gamestate $chan kill
 			ls_advance_state $chan
 		} elseif {$delayed} {
+			perfc_incr $ls_perfc_handle [perfc_resolve delays_vote]
 			ls_putmsg $chan "Some of the citizens still need to vote: [ls_format_players $chan $missing_votes]"
 		}
 	}
