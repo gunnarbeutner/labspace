@@ -51,6 +51,9 @@ bind notc - investigate* ls_notc_cmd_investigate
 bind msg - vote ls_msg_cmd_vote
 bind notc - vote* ls_notc_cmd_vote
 
+bind msg n&- smite ls_msg_cmd_smite
+bind notc n&- smite* ls_notc_cmd_smite
+
 bind part - * ls_leave_handler
 bind sign - * ls_leave_handler
 bind kick - * ls_kick_handler
@@ -147,6 +150,8 @@ proc ls_format_role {role} {
 		return "Investigator"
 	} elseif {$role == "citizen"} {
 		return "Citizen"
+	} elseif {$role == "lobby"} {
+		return "Lobby"
 	} else {
 		return "Unknown Role"
 	}
@@ -498,6 +503,33 @@ proc ls_msg_cmd_vote {nick host hand text} {
 
 proc ls_notc_cmd_vote {nick host hand text {dest ""}} {
 	ls_cmd_vote $nick [join [lrange [split $text] 1 end]]
+}
+
+proc ls_cmd_smite {nick victim} {
+	set victim [string trim $victim]
+	set chan [ls_chan_for_nick $victim]
+
+	if {$victim == ""} {
+		ls_putnotc $nick "Syntax: smite <nick>"
+		return
+	}
+
+	if {$chan == ""} {
+		ls_putnotc $nick "[ls_format_player $chan $victim] isn't in any lobby."
+		return
+	}
+
+	putmsg $chan "[ls_format_player $chan $victim 1] was struck down by [ls_format_player $chan $nick] (Admin)'s wrath."
+	ls_remove_player $chan $victim 1
+}
+
+proc ls_msg_cmd_smite {nick host hand text} {
+	ls_putnotc $nick "Note: /msg resets your idle time which might be used by other players to determine your role. You should use /notice instead."
+	ls_cmd_smite $nick $text
+}
+
+proc ls_notc_cmd_smite {nick host hand text {dest ""}} {
+	ls_cmd_smite $nick [join [lrange [split $text] 1 end]]
 }
 
 proc ls_timer_announce_players {arg} {
