@@ -633,6 +633,10 @@ proc ls_get_vote {chan nick} {
 }
 
 proc ls_set_vote {chan nick vote} {
+	if {[string equal -nocase [ls_get_vote $chan $nick] $vote]} {
+		return
+	}
+
 	if {$vote != ""} {
 		set count 0
 		foreach player [ls_get_players $chan] {
@@ -640,6 +644,9 @@ proc ls_set_vote {chan nick vote} {
 				incr count
 			}
 		}
+
+		# increase count for this new vote
+		incr count
 
 		if {![string equal -nocase $nick $vote]} {
 			if {[ls_get_vote $chan $nick] != ""} {
