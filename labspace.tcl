@@ -21,10 +21,8 @@
 # [-] different weapons
 # [-] secret voting
 # [ ] list remaining players after each round (for irssi users)
-# [x] devoice players before announcing that they were killed
 # [ ] document code
 # [ ] performance counters
-# [x] show more information about votes
 # [ ] advance game state if active scientist/investigator leaves the channel
 # [ ] remove "Done." notice for votes?
 # [ ] tweak sbnc's floodcontrol code
