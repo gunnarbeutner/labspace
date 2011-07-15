@@ -801,13 +801,17 @@ proc ls_stop_game {chan} {
 }
 
 proc ls_leave_handler {nick uhost hand chan {msg ""}} {
-	ls_remove_player $chan $nick
-	ls_advance_state $chan
+	if {[ls_get_role $chan $nick] != ""} {
+		ls_remove_player $chan $nick
+		ls_advance_state $chan
+	}
 }
 
 proc ls_kick_handler {nick uhost hand chan target reason} {
-	ls_remove_player $chan $nick
-	ls_advance_state $chan
+	if {[ls_get_role $chan $nick] != ""} {
+		ls_remove_player $chan $nick
+		ls_advance_state $chan
+	}
 }
 
 proc ls_timer_advance_state {user} {
