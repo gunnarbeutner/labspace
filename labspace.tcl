@@ -517,7 +517,7 @@ proc ls_cmd_smite {nick victim} {
 		return
 	}
 
-	putmsg $chan "[ls_format_player $chan $victim 1] was struck down by [ls_format_player $chan $nick] (Admin)'s wrath."
+	putmsg $chan "[ls_format_player $chan $victim 1] was struck by lightning."
 	ls_remove_player $chan $victim 1
 }
 
