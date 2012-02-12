@@ -1014,7 +1014,7 @@ proc ls_advance_state {chan {delayed 0}} {
 				lappend votes_reversed($count) $vote
 			}
 
-			set vote_counts [lsort -decreasing [array names votes_reversed]]
+			set vote_counts [lsort -integer -decreasing [array names votes_reversed]]
 
 			set vote_msg_parts [list]
 			foreach vote_count $vote_counts {
