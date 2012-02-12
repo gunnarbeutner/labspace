@@ -796,6 +796,8 @@ proc ls_stop_game {chan} {
 	}
 
 	pushmode $chan -m
+
+	puthelp "PRIVMSG $chan :-hl Labspace"
 }
 
 proc ls_leave_handler {nick uhost hand chan {msg ""}} {
