@@ -55,6 +55,7 @@ bind notc n&- smite* ls_notc_cmd_smite
 bind part - * ls_leave_handler
 bind sign - * ls_leave_handler
 bind kick - * ls_kick_handler
+bind nick - * ls_nick_handler
 
 internaltimer 10 1 ls_timer_advance_state [getctx]
 
@@ -811,6 +812,14 @@ proc ls_kick_handler {nick uhost hand chan target reason} {
 	if {[ls_get_role $chan $nick] != ""} {
 		ls_remove_player $chan $nick
 		ls_advance_state $chan
+	}
+}
+
+proc ls_nick_handler {nick uhost hand chan newnick} {
+	foreach player [ls_get_players $chan] {
+		if {[ls_get_vote $chan $player] == $nick} {
+			ls_set_vote $chan $player $newnick
+		}
 	}
 }
 
