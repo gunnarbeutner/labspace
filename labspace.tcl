@@ -751,6 +751,8 @@ proc ls_start_game {chan} {
 		}
 	}
 
+	flushmode $chan
+
 	foreach player $players {
 		ls_set_role $chan $player lobby
 	}
