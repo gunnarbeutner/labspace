@@ -615,6 +615,12 @@ proc ls_remove_player {chan nick {forced 0}} {
 
 	pushmode $chan -v $nick
 
+	foreach player [ls_get_players $chan] {
+		if {[ls_get_vote $chan $player] == $nick} {
+			ls_set_vote $chan $player ""
+		}
+	}
+
 	if {!$forced} {
 		if {[ls_get_announced $chan $nick]} {
 			if {[ls_game_in_progress $chan]} {
