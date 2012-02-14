@@ -786,6 +786,15 @@ proc ls_start_game {chan} {
 		ls_set_role $chan $player citizen
 	}
 
+	utimer 2 [list ls_start_game_delayed $chan]
+}
+
+proc ls_start_game_delayed {chan} {
+	if {[queuesize all] > 0} {
+		utimer 2 [list ls_start_game_delayed $chan]
+		return
+	}
+
 	set roles [list]
 	foreach role [list scientist investigator citizen] {
 		lappend roles "[llength [ls_get_players $chan $role]]x [ls_format_role $role]"
