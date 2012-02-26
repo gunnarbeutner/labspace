@@ -60,6 +60,7 @@ bind notc - vote* ls_notc_cmd_vote
 bind msg n&- smite ls_msg_cmd_smite
 bind notc n&- smite* ls_notc_cmd_smite
 
+bind pubm - * ls_pubm_handler
 bind part - * ls_leave_handler
 bind sign - * ls_leave_handler
 bind kick - * ls_kick_handler
@@ -829,6 +830,17 @@ proc ls_stop_game {chan} {
 	pushmode $chan -m
 
 	puthelp "PRIVMSG $chan :-hl Labspace"
+}
+
+proc ls_pubm_handler {nick uhost hand chan text} {
+	global ls_min_players
+
+	set players [ls_get_players $chan]
+
+	if {[ls_get_gamestate $chan] == "lobby" && [llength $players] < $ls_min_players} {
+		ls_set_gamestate_delay $chan 90
+		ls_set_gamestate_timeout $chan 150
+	}
 }
 
 proc ls_leave_handler {nick uhost hand chan {msg ""}} {
