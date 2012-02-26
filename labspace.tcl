@@ -32,6 +32,14 @@ set ::ls_min_players 6
 set ::ls_use_cmsg 1
 set ::ls_debugmode 0
 
+set ::ls_kill_messages {
+	"%NICK% was brutally murdered."
+	"%NICK% was vaporized by the scientist's death ray."
+	"%NICK% slipped into a coma after drinking their poison-laced morning coffee."
+	"%NICK% was crushed to death by a 5-ton boulder."
+	"%NICK% couldn't escape from the scientist's killbot army."
+}
+
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
 
@@ -347,6 +355,8 @@ proc ls_pub_cmd_wait {nick host hand chan arg} {
 }
 
 proc ls_cmd_kill {nick victim} {
+	global ls_kill_messages
+
 	set chan [ls_chan_for_nick $nick]
 	set victim [string trim $victim]
 
@@ -386,7 +396,10 @@ proc ls_cmd_kill {nick victim} {
 			if {[ls_get_role $chan $victim] == "scientist"} {
 				ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered. Oops."
 			} else {
-				ls_putmsg $chan "[ls_format_player $chan $victim 1] was brutally murdered."
+				set index [rand [llength $ls_kill_messages]]
+				set format [lindex $ls_kill_messages [rand [llength $ls_kill_messages]]]
+				set message [string map [list "%NICK%" [ls_format_player $chan $victim 1]] $format]
+				ls_putmsg $chan $message
 			}
 		}
 
