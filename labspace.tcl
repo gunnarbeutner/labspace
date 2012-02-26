@@ -386,7 +386,7 @@ proc ls_cmd_kill {nick victim} {
 		return
 	}
 
-	if {[rand 100] > 85 && [llength [ls_get_players $chan scientist]] >= 2} {
+	if {[rand 100] > 85} {
 		ls_putmsg $chan "The scientists' attack was not successful tonight. Nobody died."
 	} else {
 		ls_devoice_player $chan $victim
