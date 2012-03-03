@@ -84,21 +84,6 @@ proc ls_clear_state {} {
 	array unset ls_gamestate_delay
 }
 
-# performance counter support
-if {[llength [info procs perfc_open]] > 0} {
-	if {[info exists ::ls_perfc_handle]} {
-		perfc_close $::ls_perfc_handle
-	}
-
-	set ::ls_perfc_handle [perfc_open labspace.perfc]
-} else {
-	# stubs in case the performance counter module is unavailable
-	proc perfc_resolve {args} {}
-	proc perfc_get {handle path} { return 0 }
-	proc perfc_set {handle path value} {}
-	proc perfc_incr {handle path} {}
-}
-
 # sends a debug message
 proc ls_debug {chan message} {
 	global ls_debugmode
@@ -875,7 +860,7 @@ proc ls_timer_advance_state {user} {
 }
 
 proc ls_advance_state {chan {delayed 0}} {
-	global botnick ls_perfc_handle ls_min_players
+	global botnick ls_min_players
 
 	if {$delayed && ![ls_gamestate_delay_exceeded $chan]} {
 		return
@@ -909,7 +894,6 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {[llength $scientists] >= [expr {[llength $players] - [llength $scientists]}]} {
 		ls_putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
 
-		perfc_incr $ls_perfc_handle [perfc_resolve wins_scientists]
 		ls_stop_game $chan
 
 		return
@@ -919,7 +903,6 @@ proc ls_advance_state {chan {delayed 0}} {
 	if {[llength $scientists] == 0} {
 		ls_putmsg $chan "All scientists have been eliminated. The citizens win this round: [ls_format_players $chan $players 1]"
 
-		perfc_incr $ls_perfc_handle [perfc_resolve wins_citizens]
 		ls_stop_game $chan
 
 		return
@@ -954,11 +937,9 @@ proc ls_advance_state {chan {delayed 0}} {
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "The scientists failed to set their alarm clocks. Nobody dies tonight."
 
-			perfc_incr $ls_perfc_handle [perfc_resolve timeouts_kill]
 			ls_set_gamestate $chan investigate
 			ls_advance_state $chan
 		} else {
-			perfc_incr $ls_perfc_handle [perfc_resolve delays_kill]
 			ls_putmsg $chan "The scientists still need to pick someone to kill."
 		}
 	}
@@ -995,11 +976,9 @@ proc ls_advance_state {chan {delayed 0}} {
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "Looks like the investigator is still firmly asleep."
 
-			perfc_incr $ls_perfc_handle [perfc_resolve timeouts_investigate]
 			ls_set_gamestate $chan vote
 			ls_advance_state $chan
 		} else {
-			perfc_incr $ls_perfc_handle [perfc_resolve delays_investigate]
 			ls_putmsg $chan "The investigator still needs to do their job."
 		}
 	}
@@ -1022,7 +1001,6 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan] || [llength $missing_votes] == 0} {
 			if {[ls_gamestate_timeout_exceeded $chan]} {
-				perfc_incr $ls_perfc_handle [perfc_resolve timeouts_vote]
 			}
 
 			array unset votes
@@ -1089,7 +1067,6 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_set_gamestate $chan kill
 			ls_advance_state $chan
 		} elseif {$delayed} {
-			perfc_incr $ls_perfc_handle [perfc_resolve delays_vote]
 			ls_putmsg $chan "Some of the citizens still need to vote: [ls_format_players $chan $missing_votes]"
 		}
 	}
