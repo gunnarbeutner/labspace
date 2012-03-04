@@ -40,6 +40,15 @@ set ::ls_kill_messages {
 	"%NICK% couldn't escape from the scientist's killbot army."
 }
 
+set ::ls_event_handlers {
+	ls_log_event_handler
+	ls_stats_event_handler
+}
+
+if {![info exists ::ls_stats_events]} {
+	set ::ls_stats_events [list]
+}
+
 bind pub - !labspace ls_pub_cmd_labspace
 bind pub - !nolabspace ls_pub_cmd_remove
 
@@ -76,6 +85,8 @@ proc ls_bug_timer {} {}
 # clear game state when the bot gets disconnected from IRC
 internalbind svrdisconnect ls_clear_state
 
+internaltimer 10 1 ls_flush_stats
+
 proc ls_clear_state {} {
 	global ls_gamestate ls_gamestate_timeout ls_gamestate_delay
 
@@ -90,6 +101,57 @@ proc ls_debug {chan message} {
 
 	if {$ls_debugmode} {
 		ls_putmsg $chan "DEBUG: $message"
+	}
+}
+
+proc ls_log_event_handler {channel name arguments} {
+	set file [open "labspace.log" "a"]
+	puts $file "[unixtime] channel: $channel, name: $name, args: \"[join $arguments {" "}]\""
+	close $file
+}
+
+proc ls_stats_event_handler {channel name arguments} {
+	global ls_stats_events
+
+	if {![info exists ls_stats_events]} {
+		set ls_stats_events [list]
+	}
+
+	lappend ls_stats_events [list [clock seconds] $channel $name $arguments]
+}
+
+proc ls_flush_stats {} {
+	global ls_stats_events
+
+	if {![info exists ls_stats_events]} {
+		return
+	}
+
+	setctx "stats"
+
+	while {[llength $ls_stats_events] > 0} {
+		set event [lindex $ls_stats_events 0]
+		set timestamp [lindex $event 0]
+
+		if {$timestamp > [expr {[clock seconds] - 300}]} {
+			break
+		}
+
+		set ls_stats_events [lreplace $ls_stats_events 0 0]
+
+		set channel [lindex $event 1]
+		set name [lindex $event 2]
+		set arguments [lindex $event 3]
+
+		putmsg "#labspace.stats" "channel: $channel, name: $name, args: \"[join $arguments {" "}]\""
+	}
+}
+
+proc ls_post_event {channel name args} {
+	global ls_event_handlers
+
+	foreach event_handler $ls_event_handlers {
+		$event_handler $channel $name $args
 	}
 }
 
@@ -373,6 +435,7 @@ proc ls_cmd_kill {nick victim} {
 
 	if {[rand 100] > 85} {
 		ls_putmsg $chan "The scientists' attack was not successful tonight. Nobody died."
+		ls_post_event $chan kill_failed $nick $victim
 	} else {
 		ls_devoice_player $chan $victim
 
@@ -390,6 +453,7 @@ proc ls_cmd_kill {nick victim} {
 		}
 
 		ls_remove_player $chan $victim 1
+		ls_post_event $chan kill_success $nick $victim
 	}
 
 	ls_set_gamestate $chan investigate
@@ -446,6 +510,7 @@ proc ls_cmd_investigate {nick victim} {
 	} else {
 		ls_putnotc $nick "[ls_format_player $chan $victim]'s role is: [ls_format_role [ls_get_role $chan $victim]]"
 	}
+	ls_post_event $chan investigate $nick $victim [ls_get_role $chan $victim]
 	ls_set_gamestate $chan vote
 	ls_advance_state $chan
 }
@@ -662,6 +727,8 @@ proc ls_set_role {chan nick role} {
 	if {$role != "" && $role != "lobby"} {
 		ls_putnotc $nick "Your role has been changed to '[ls_format_role $role]'."
 	}
+
+	ls_post_event $chan set_role $nick $role
 }
 
 proc ls_get_vote {chan nick} {
@@ -693,6 +760,8 @@ proc ls_set_vote {chan nick vote} {
 		} else {
 			ls_putmsg $chan "[ls_format_player $chan $nick] voted for himself. Oops! ($count votes)"
 		}
+
+		ls_post_event $chan set_vote $nick $vote
 	}
 
 	bncsettag $chan $nick ls_vote $vote
@@ -757,6 +826,7 @@ proc ls_start_game {chan} {
 	}
 
 	ls_putmsg $chan "Starting the game..."
+	ls_post_event $chan start_game
 
 	# pick scientists
 	set scientists_count 0
@@ -893,6 +963,7 @@ proc ls_advance_state {chan {delayed 0}} {
 	# winning condition for scientists
 	if {[llength $scientists] >= [expr {[llength $players] - [llength $scientists]}]} {
 		ls_putmsg $chan "There are equal to or more scientists than citizens. Science wins again: [ls_format_players $chan $scientists 1]"
+		ls_post_event $chan scientists_win
 
 		ls_stop_game $chan
 
@@ -902,6 +973,7 @@ proc ls_advance_state {chan {delayed 0}} {
 	# winning condition for citizens
 	if {[llength $scientists] == 0} {
 		ls_putmsg $chan "All scientists have been eliminated. The citizens win this round: [ls_format_players $chan $players 1]"
+		ls_post_event $chan citizens_win
 
 		ls_stop_game $chan
 
@@ -920,6 +992,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			foreach scientist $scientists {
 				if {[string equal -nocase $active_scientist $scientist]} {
 					ls_set_active $chan $scientist 1
+					ls_post_event $chan set_active_scientist $scientist
 					ls_putnotc $scientist "It's your turn to select a citizen to kill. Use /notice $botnick kill <nick> to kill someone."
 				} else {
 					ls_set_active $chan $scientist 0
@@ -936,6 +1009,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "The scientists failed to set their alarm clocks. Nobody dies tonight."
+			ls_post_event $chan scientists_timeout
 
 			ls_set_gamestate $chan investigate
 			ls_advance_state $chan
@@ -959,6 +1033,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			foreach investigator $investigators {
 				if {[string equal -nocase $active_investigator $investigator]} {
 					ls_set_active $chan $investigator 1
+					ls_post_event $chan set_active_investigator $investigator
 					ls_putnotc $investigator "You need to choose someone to investigate: /notice $botnick investigate <nick>"
 				} else {
 					ls_set_active $chan $investigator 0
@@ -975,6 +1050,7 @@ proc ls_advance_state {chan {delayed 0}} {
 			ls_set_gamestate_timeout $chan 120
 		} elseif {[ls_gamestate_timeout_exceeded $chan]} {
 			ls_putmsg $chan "Looks like the investigator is still firmly asleep."
+			ls_post_event $chan investigator_timeout
 
 			ls_set_gamestate $chan vote
 			ls_advance_state $chan
@@ -1062,6 +1138,7 @@ proc ls_advance_state {chan {delayed 0}} {
 
 			ls_devoice_player $chan $victim
 			ls_putmsg $chan "[ls_format_player $chan $victim 1] was lynched by the angry mob."
+			ls_post_event $chan player_lynched $victim [ls_get_role $chan $victim]
 			ls_remove_player $chan $victim 1
 
 			ls_set_gamestate $chan kill
