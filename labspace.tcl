@@ -133,7 +133,7 @@ proc ls_flush_stats {} {
 		set event [lindex $ls_stats_events 0]
 		set timestamp [lindex $event 0]
 
-		if {$timestamp > [expr {[clock seconds] - 300}]} {
+		if {$timestamp > [expr {[clock seconds] - 600}]} {
 			break
 		}
 
