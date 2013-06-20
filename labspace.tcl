@@ -855,6 +855,8 @@ proc ls_start_game {chan} {
 		ls_set_role $chan $player citizen
 	}
 
+	ls_set_gamestate $chan kill_pending
+
 	utimer 2 [list ls_start_game_delayed $chan]
 }
 
